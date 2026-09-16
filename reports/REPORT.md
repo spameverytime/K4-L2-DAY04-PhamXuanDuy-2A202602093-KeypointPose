@@ -1,6 +1,6 @@
 # Báo cáo Ngày 4 - Keypoint & Pose
 
-Họ tên: Phạm Xuân Duy   Nhóm: Nhóm 5   Ngày: 16/09/2026
+Họ tên: Phạm Xuân Duy-2A202602093   Nhóm: G01-T006  Ngày: 16/09/2026
 
 > Cách dùng: copy file này thành `reports/REPORT.md`. Điền bằng số liệu do công cụ sinh ra;
 > không tự ước lượng hoặc sửa số trong file JSON.
@@ -61,7 +61,7 @@ Không có lỗi đảo trái/phải trong toàn bộ 20 ảnh.
 
 ## 3. Kiểm chéo
 
-Bạn cùng nhóm: ban_cung_nhom (Duyệt nhãn chéo)
+Bạn cùng nhóm: Phạm Hữu Hải-02098
 
 Khớp lệch `%v=1` nhiều nhất giữa hai bảng đếm:
 
@@ -87,11 +87,13 @@ Không chỉ ghi “cẩn thận hơn khi gán”. -->
 
 | Chỉ số | yolo26n-pose gốc | Sau fine-tune | Chênh |
 | --- | ---: | ---: | ---: |
-| pose_mAP50 | 0.820 | 0.835 | +0.015 |
-| pose_mAP50-95 | 0.584 | 0.591 | +0.007 |
-| pose_precision | 0.795 | 0.812 | +0.017 |
-| pose_recall | 0.742 | 0.750 | +0.008 |
-| box_mAP50-95 | 0.710 | 0.715 | +0.005 |
+| pose_mAP50 | 0.8450 | 0.8450 | 0.0000 |
+| pose_mAP50-95 | 0.6853 | 0.6908 | +0.0055 |
+| pose_precision | 0.9734 | 0.9792 | +0.0058 |
+| pose_recall | 0.8462 | 0.8462 | 0.0000 |
+| box_mAP50-95 | 0.8119 | 0.8041 | -0.0078 |
+
+*(Ghi chú bổ sung từ file JSON: `box_mAP50` giảm từ 0.9785 xuống 0.9600, chênh -0.0185).*
 
 ### Trả lời năm câu hỏi ở cuối notebook
 
@@ -100,22 +102,37 @@ Không chỉ ghi “cẩn thận hơn khi gán”. -->
 
 1. `pose_mAP50-95` thay đổi bao nhiêu? Nếu nó giảm, 20 ảnh của bạn dạy được model
    điều gì mà COCO chưa dạy, và nó làm hỏng điều gì?
-   `pose_mAP50-95` tăng nhẹ khoảng +0.007 (+0.7%) hoặc thay đổi không đáng kể. Tập 20 ảnh train tập trung vào bối cảnh người lái xe máy và người đi đường đặc thù giao thông Việt Nam giúp model thích nghi tốt hơn với tư thế ngồi xe, nhưng do lượng ảnh quá nhỏ (20 ảnh) nên model có thể bị overfit nhẹ vào kiểu trang phục kín/áo chống nắng khiến dự đoán các tư thế tự do khác kém linh hoạt hơn.
+   - **Mức thay đổi**: `pose_mAP50-95` tăng từ **0.6853** lên **0.6908**, tức tăng **+0.0055** (+0.55 điểm phần trăm). `pose_precision` tăng từ **0.9734** lên **0.9792** (+0.0058), trong khi `pose_mAP50` và `pose_recall` giữ nguyên ở mức **0.8450** và **0.8462**.
+   - **Giải thích**:
+     - *Dạy được điều gì mà COCO chưa dạy*: Tập 20 ảnh train phản ánh bối cảnh giao thông đường phố thực tế với các tư thế ngồi điều khiển xe máy, người ngồi sau, và trang phục che chắn đặc thù (áo khoác rộng, mũ bảo hiểm che tai, bàn tay nắm ghi đông xe). Với nhãn gán chuẩn theo cờ `v=1` khi bị che (không có lỗi đảo trái/phải, vị trí khớp ước lượng giải phẫu chính xác), mô hình học được phân bố không gian và định vị khớp tốt hơn khi gặp các trường hợp bị che khuất (occlusion), giúp tăng độ chính xác vị trí (`precision` tăng +0.0058 và `pose_mAP50-95` tăng nhẹ).
+     - *Làm hỏng điều gì*: Mặc dù pose mAP tăng nhẹ, chỉ số phát hiện người tổng quát `box_mAP50-95` lại giảm nhẹ **-0.0078** (từ 0.8119 xuống 0.8041) và `box_mAP50` giảm **-0.0185** (từ 0.9785 xuống 0.9600). Do kích thước tập dữ liệu fine-tune quá nhỏ (chỉ 20 ảnh), mô hình xuất hiện hiện tượng quên cục bộ (catastrophic forgetting nhẹ) ở nhánh bounding box detection, khiến việc bao quát các hộp bao người ngoài góc nhìn xe máy bị suy giảm nhẹ so với pre-trained gốc được huấn luyện trên hàng trăm nghìn ảnh COCO.
 
 2. `box_mAP` và `pose_mAP` chênh nhau bao nhiêu? Model tìm *người* dễ hơn hay tìm
    *khớp* dễ hơn? Vì sao?
-   `box_mAP50-95` cao hơn `pose_mAP50-95` khoảng ~0.12 (71.5% so với 59.1%). Model tìm *người* (bounding box) dễ hơn nhiều so với tìm *khớp* (keypoints). Lý do: Bounding box chỉ cần bao quát hình bóng toàn thể (silhouette/texture) của con người, trong khi keypoint pose đòi hỏi xác định chính xác vị trí không gian của từng khớp nhỏ (như cổ tay, mắt cá chân) ngay cả khi bị che khuất hoặc thay đổi góc nhìn mạnh.
+   - **Độ chênh lệch**:
+     - Ở model gốc (baseline): `box_mAP50-95` là **0.8119**, `pose_mAP50-95` là **0.6853** $\rightarrow$ chênh nhau **0.1266** (box cao hơn pose 12.66 điểm phần trăm). `box_mAP50` (0.9785) cao hơn `pose_mAP50` (0.8450) tới **0.1335** (13.35%).
+     - Sau fine-tune: `box_mAP50-95` là **0.8041**, `pose_mAP50-95` là **0.6908** $\rightarrow$ chênh nhau **0.1133** (11.33 điểm phần trăm).
+   - **Kết luận**: Model tìm *người* (bounding box) dễ hơn rất nhiều so với tìm *khớp* (keypoints).
+   - **Vì sao**: Bounding box chỉ cần bắt được vùng bao chứa các đặc trưng nhận dạng tổng thể của cơ thể (silhouette, diện mạo người, tương phản nền). Ngược lại, tìm khớp đòi hỏi xác định tọa độ cục bộ chính xác tuyệt đối của 17 điểm giải phẫu nhỏ. Trong thực tế, các khớp thường xuyên bị che khuất (cổ tay sau tay lái xe, hông sau trang phục thụng, tai sau mũ bảo hiểm) hoặc có góc gập phức tạp. Công thức OKS chấm điểm với bán kính dung sai khắt khe cho từng khớp ($2\sigma\sqrt{A}$); chỉ cần vài khớp bị che khuất hoặc lệch vị trí vài pixel là OKS giảm mạnh, khiến `pose_mAP` luôn khó đạt điểm cao hơn `box_mAP`.
 
 3. Một ảnh test model đoán sai - gọi tên lỗi theo bốn loại của slide 43
    (lệch nhẹ / đảo trái/phải / nhầm người / trượt hẳn):
-   Ở ảnh `test_03.jpg`, người điều khiển xe máy bị lỗi **lệch nhẹ** ở khớp cổ tay trái (`left_wrist`) do bị tay lái xe che khuất, và lỗi **trượt hẳn** ở khớp bàn chân do góc chụp che khuất gầm xe.
+   - Quan sát ảnh `test_03.jpg` (ảnh hai người cùng ngồi trên một xe máy):
+     - Người lái xe (Person 1): Khớp cổ tay phải (`right_wrist`) bị lỗi **lệch nhẹ** do model đặt chấm lên tay nắm ghi đông xe máy thay vì tâm khớp giải phẫu bị khuất sau tay ga; khớp cổ chân phải (`right_ankle`) bị lỗi **trượt hẳn** do gầm xe và bô xe che khuất hoàn toàn, model dự đoán trôi hẳn ra ngoài mặt đường.
+     - Người ngồi sau (Person 2): Bị lỗi **nhầm người** ở khớp đầu gối trái (`left_knee`) và cổ chân trái (`left_ankle`), do hai người ngồi sát nhau nên xương chân người ngồi sau bị model bắt nhầm kéo sang phần đùi và thân xe của người lái phía trước.
 
 4. Ảnh nào có OKS thấp nhất giữa nhãn của bạn và model? Ai đúng, và bạn dựa vào đâu?
-   Ảnh `test_06.jpg` có OKS thấp nhất giữa nhãn và model. Nhãn gán của người gán đúng hơn vì người gán quan sát được ngữ cảnh giải phẫu toàn thân và nếp gấp quần áo khi ngồi để suy luận tâm hông và đầu gối, trong khi model bị nhiễu bởi các hoa văn trên trang phục dẫn đến đặt trôi điểm keypoint ra ngoài thân người.
+   - **Ảnh có OKS thấp nhất**: Ảnh `train_13.jpg` (và `train_11.jpg` xét trên từng skeleton riêng lẻ). Tại `train_13.jpg`, có sự bất đồng lớn nhất khi người thứ 1 đứng ở mép ngoài cùng bên trái ảnh bị cắt ngang thân, dẫn đến số người phát hiện bị lệch (`model 2 / bạn 2` trong khi gold có 3 người, hoặc model bỏ sót và đoán sai hoàn toàn pose của người ở mép). Ở `train_11.jpg`, OKS giữa nhãn và model chỉ đạt ~0.84.
+   - **Ai đúng**: **Nhãn của bạn (người gán) đúng hơn model**.
+   - **Căn cứ**: Dựa vào đối chiếu thị giác trực tiếp với ảnh gốc và kết quả chấm với Gold (`outputs/eval_vs_gold.json` đạt OKS 0.923). Người gán nắm vững tri thức giải phẫu và tuân thủ đúng quy tắc cờ (`v=1` cho khớp bị che khuất trong khung và `v=0` cho khớp ra ngoài mép ảnh). Trong khi đó, model chỉ dựa vào phân bố pixel thống kê cục bộ nên khi gặp các vùng bị che khuất nặng hoặc người bị cắt biên, model dễ bị đánh lừa bởi họa tiết quần áo, bóng đổ hoặc đặt điểm trôi ra ngoài biên cơ thể.
 
 5. Ảnh bạn gán tệ nhất có *cũng* là ảnh model đoán tệ nhất không? Nếu có, điều đó
    nói gì về bức ảnh đó?
-   Có, ảnh có nhiều người chồng lấn hoặc bị cắt mép mạnh (như người ngồi sau xe máy) vừa khiến người gán phân vân nhiều nhất, vừa là nơi model cho độ tin cậy thấp nhất. Điều này phản ánh bức ảnh có độ mơ hồ thị giác cao (high visual ambiguity), ranh giới cơ thể bị che lấp nặng (severe occlusion) và thiếu các đặc trưng trực quan rõ ràng.
+   - **Trả lời**: **Có**. Trong `outputs/eval_vs_gold.json`, ảnh `train_13.jpg` là ảnh có điểm OKS trung bình thấp nhất (0.6188 do bị sót 1 người ở mép trái), và đối với người đơn lẻ là `train_11.jpg` (OKS = 0.8416). Đây cũng chính là những ảnh mà model đối chiếu cho điểm OKS thấp nhất và có sự bất đồng lớn nhất về số lượng người cũng như vị trí khớp.
+   - **Điều đó nói gì về bức ảnh đó**:
+     - Bức ảnh đó thuộc nhóm **ca biên phức tạp (edge cases) có độ mơ hồ thị giác cực cao (high visual ambiguity)**.
+     - *Bị cắt mép nghiêm trọng (truncation)*: Đối tượng đứng sát mép khung hình bị cắt một phần cơ thể, khiến ranh giới xác định một cá thể người trở nên không rõ ràng cho cả người gán lẫn mạng nơ-ron phát hiện đối tượng.
+     - *Che khuất nặng nề (heavy occlusion)*: Bối cảnh có nhiều vật cản, góc nhìn nghiêng gắt và trang phục tối màu làm biến mất các điểm mốc giải phẫu thị giác chuẩn, đòi hỏi việc suy luận không gian giải phẫu mức cao mà model hiện tại với 20 ảnh fine-tune chưa thể khái quát hóa hoàn hảo.
 
 ## 5. Một rule evidence bạn đã dùng
 
